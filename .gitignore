@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Log files
+*.log
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output (se houver outros além do executável pkg)
+# build/
+dist/ # Ignora a pasta onde o pkg gera executáveis
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS generated files
+.DS_Store
+Thumbs.db

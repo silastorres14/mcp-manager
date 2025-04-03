@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Server Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>MCP Server Manager</h1>
+
+    <div class="container">
+        <div class="server-list-container">
+            <h2>Servidores Configurados</h2>
+            <ul id="server-list">
+                <!-- Servidores serão carregados aqui -->
+            </ul>
+            <button id="add-server-btn">Adicionar Novo Servidor</button>
+        </div>
+
+        <div class="details-container">
+            <div id="server-form-container" style="display: none;">
+                <h2 id="form-title">Adicionar Servidor</h2>
+                <form id="server-form">
+                    <input type="hidden" id="server-id">
+                    <label for="server-name">Nome:</label>
+                    <input type="text" id="server-name" required>
+
+                    <label for="server-description">Descrição:</label>
+                    <input type="text" id="server-description">
+
+                    <label for="server-command">Comando:</label>
+                    <input type="text" id="server-command" placeholder="ex: node" required>
+
+                    <label for="server-args">Argumentos (separados por vírgula):</label>
+                    <input type="text" id="server-args" placeholder="ex: /path/to/script.js, --port, 8000">
+
+                    <label for="server-env">Variáveis de Ambiente (JSON):</label>
+                    <textarea id="server-env" placeholder='ex: {"VAR1": "valor1", "VAR2": "valor2"}'></textarea>
+
+                    <button type="submit" id="save-server-btn">Salvar</button>
+                    <button type="button" id="cancel-edit-btn">Cancelar</button>
+                </form>
+            </div>
+
+            <div id="log-container" style="display: none;">
+                <h2>Logs (<span id="log-server-name"></span>)</h2>
+                <pre id="logs"></pre>
+                <button id="clear-logs-btn">Limpar Logs</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
