@@ -26,7 +26,7 @@ Um gerenciador web local simples para iniciar, parar, configurar e visualizar lo
 
 1.  **Clone o Repositório:**
     ```bash
-    git clone https://github.com/<seu-usuario-github>/<nome-do-repositorio>.git
+    git clone https://github.com/silastorres14/mcp-manager.git
     # Substitua pela URL correta do SEU repositório
     ```
 
