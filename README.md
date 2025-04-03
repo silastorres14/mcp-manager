@@ -1,6 +1,7 @@
 # MCP Manager Local
 
 Um gerenciador web local simples para iniciar, parar, configurar e visualizar logs de servidores MCP (Multi-Capability Protocol), com funcionalidades para clonar novos servidores de repositórios Git e adicionar configurações via JSON.
+![image](https://github.com/user-attachments/assets/081eb203-609f-430d-8eb9-8ded86fc0c5d)
 
 ## Funcionalidades
 
