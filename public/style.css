@@ -1,207 +1,199 @@
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
+/* Reset básico */
+* {
+    box-sizing: border-box;
     margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f0f2f5;
+    color: #1c1e21;
     padding: 20px;
-    background-color: #f4f7f6;
-    color: #333;
 }
 
 h1, h2 {
-    color: #2c3e50;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 5px;
-    margin-bottom: 15px;
+    color: #1d2129;
+    margin-bottom: 1em;
+}
+h1 {
+    text-align: center;
+    border-bottom: 1px solid #dddfe2;
+    padding-bottom: 0.5em;
+    margin-bottom: 1.5em;
+    font-size: 1.8em;
+}
+h2 {
+    font-size: 1.3em;
+    border-bottom: 1px solid #e4e6eb;
+    padding-bottom: 0.4em;
+    margin-bottom: 0.8em; /* Less margin for H2 */
+}
+
+/* Estilo geral para 'cards' */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .container {
     display: flex;
+    flex-wrap: wrap; /* Allow wrapping */
     gap: 30px;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 20px auto;
 }
 
 .server-list-container {
     flex: 1;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    max-width: 400px; /* Limit width */
+    min-width: 350px;
+    max-width: 550px; /* Slightly wider maybe */
+    align-self: flex-start;
 }
 
 .details-container {
     flex: 2;
+    min-width: 400px;
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-
+/* Lista de Servidores */
 #server-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 60vh; /* Limit height and allow scroll */
-    overflow-y: auto; /* Enable vertical scroll */
+    max-height: 65vh; /* Limit height */
+    overflow-y: auto; /* Enable scroll */
+    border: 1px solid #e4e6eb;
+    border-radius: 6px;
+    margin-bottom: 15px;
 }
 
 #server-list li {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 10px;
-    border-bottom: 1px solid #eee;
+    padding: 12px 15px;
+    border-bottom: 1px solid #e4e6eb;
     cursor: pointer;
     transition: background-color 0.2s ease;
+    word-break: break-word;
+}
+#server-list li:last-child { border-bottom: none; }
+#server-list li:hover { background-color: #f0f2f5; }
+#server-list li.selected { background-color: #e7f3ff; font-weight: 600; }
+#server-list li .server-description { /* Added class for description */
+     font-size: 0.85em;
+     color: #606770;
+     margin-left: 22px; /* Indent under name */
+     display: block; /* Make it appear on new line */
+     margin-top: 2px;
 }
 
-#server-list li:hover {
-    background-color: #ecf0f1;
-}
-
-#server-list li.selected {
-     background-color: #d4e6f1; /* Highlight selected */
-     font-weight: bold;
-}
 
 .server-info {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    flex-grow: 1;
+    margin-right: 10px;
+    /* Allow wrapping for description */
+    flex-direction: column;
+    align-items: flex-start;
 }
+.server-info-main { /* Group indicator and name */
+     display: flex;
+     align-items: center;
+     gap: 12px;
+}
+.server-info-main span { flex-shrink: 1; }
+
 
 .status-indicator {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    margin-right: 8px;
+    flex-shrink: 0;
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
 }
+.status-running { background-color: #42b72a; box-shadow: 0 0 5px #42b72a; }
+.status-stopped { background-color: #adb5bd; }
+.status-starting, .status-stopping { background-color: #ffc107; animation: blink 1s infinite; }
+.status-error { background-color: #fa383e; border: 1px solid #dc3545;}
 
-.status-running { background-color: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
-.status-stopped { background-color: #e74c3c; }
-.status-starting, .status-stopping { background-color: #f39c12; animation: blink 1s infinite; }
-.status-error { background-color: #c0392b; border: 1px solid #7f0000; }
+@keyframes blink { 50% { opacity: 0.4; } }
 
-@keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
+.server-actions { display: flex; gap: 5px; flex-shrink: 0; }
 
-.server-actions button, #add-server-btn {
-    background-color: #3498db;
-    color: white;
+/* General button styling */
+button, .server-actions button, #add-server-btn {
+    background-color: #e4e6eb;
+    color: #4b4f56;
     border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.9em;
-    margin-left: 5px;
-    transition: background-color 0.2s ease;
+    font-weight: 600;
+    transition: background-color 0.2s ease, filter 0.2s ease;
+    white-space: nowrap; /* Prevent button text wrapping */
 }
-.server-actions button:hover, #add-server-btn:hover {
-    background-color: #2980b9;
-}
-.server-actions .stop-btn { background-color: #e74c3c; }
-.server-actions .stop-btn:hover { background-color: #c0392b; }
-.server-actions .edit-btn { background-color: #f39c12; }
-.server-actions .edit-btn:hover { background-color: #d35400; }
-.server-actions .delete-btn { background-color: #95a5a6; }
-.server-actions .delete-btn:hover { background-color: #7f8c8d; }
+button:hover, .server-actions button:hover, #add-server-btn:hover { filter: brightness(95%); }
+button:disabled, .server-actions button:disabled { background-color: #f0f2f5; color: #bec3c9; cursor: not-allowed; }
 
-#add-server-btn {
-    margin-top: 15px;
+/* Specific Button Colors / Styles */
+.server-actions .start-btn { background-color: #42b72a; color: white; font-size: 1.1em; padding: 4px 8px;} /* Make icons slightly bigger */
+.server-actions .stop-btn { background-color: #fa383e; color: white; font-size: 1.1em; padding: 4px 8px;}
+.server-actions .edit-btn { background-color: #ffc107; color: #1c1e21; font-size: 1.1em; padding: 4px 8px;}
+.server-actions .delete-btn { background-color: #6c757d; color: white; font-size: 1.1em; padding: 4px 8px;}
+#add-server-btn { width: 100%; background-color: #1877f2; color: white; padding: 10px; font-size: 1em; }
+#save-server-btn { background-color: #1877f2; color: white; }
+#cancel-edit-btn { background-color: #e4e6eb; color: #4b4f56; }
+#clear-logs-btn { background-color: #e4e6eb; color: #4b4f56; margin-top: 10px;}
+#clone-btn { background-color: #1877f2; color: white; }
+
+/* Formulário e Logs */
+.form-group { margin-bottom: 15px; }
+label { display: block; margin-bottom: 5px; font-weight: 600; color: #606770; font-size: 0.95em; }
+input[type="text"], input[type="url"], textarea {
     width: 100%;
-    padding: 10px;
-}
-
-
-#server-form-container, #log-container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-#server-form label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #555;
-}
-
-#server-form input[type="text"],
-#server-form textarea {
-    width: calc(100% - 22px); /* Adjust for padding/border */
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 10px 12px;
+    border: 1px solid #ccd0d5;
+    border-radius: 6px;
     font-size: 1em;
+    background-color: #f5f6f7;
 }
+input:focus, textarea:focus { outline: none; border-color: #1877f2; background-color: #fff; box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2); }
+textarea { min-height: 100px; resize: vertical; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+small { display: block; font-size: 0.85em; color: #606770; margin-top: 3px; }
 
-#server-form textarea {
-    min-height: 80px;
-    resize: vertical;
-    font-family: monospace;
-}
+/* Container de Clonagem */
+.git-clone-container { max-width: 900px; margin-left: auto; margin-right: auto; }
 
-#server-form button {
-    background-color: #2ecc71;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px;
-    transition: background-color 0.2s ease;
-}
-#server-form button:hover {
-    background-color: #27ae60;
-}
-#server-form #cancel-edit-btn {
-    background-color: #bdc3c7;
-}
-#server-form #cancel-edit-btn:hover {
-    background-color: #95a5a6;
-}
-
-
-#log-container h2 {
-    margin-top: 0;
-}
-#log-server-name {
-    font-weight: normal;
-    font-style: italic;
-    color: #555;
-}
+/* Logs */
+#log-container h2 { margin-top: 0; }
+#log-server-name { font-weight: normal; font-style: italic; color: #606770;}
 #logs {
-    background-color: #2c3e50; /* Dark background for logs */
-    color: #ecf0f1; /* Light text */
-    padding: 15px;
-    border-radius: 4px;
-    height: 400px;
-    overflow-y: scroll;
-    white-space: pre-wrap; /* Wrap long lines */
-    word-wrap: break-word;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.9em;
-    margin-bottom: 10px;
+    background-color: #1c1e21; color: #e4e6eb;
+    padding: 15px; border-radius: 6px; height: 450px;
+    overflow-y: scroll; white-space: pre-wrap; word-wrap: break-word;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em; margin-bottom: 10px; border: 1px solid #3e4042;
 }
-.log-stdout { color: #bdc3c7; } /* Lighter gray for stdout */
-.log-stderr { color: #e74c3c; font-weight: bold; } /* Red for stderr */
-.log-status { color: #f1c40f; font-style: italic; } /* Yellow for status messages */
+.log-stdout { color: #e4e6eb; }
+.log-stderr { color: #ff7f7f; }
+.log-status { color: #ffda63; font-style: italic; }
 
-#clear-logs-btn {
-     background-color: #95a5a6;
-     color: white;
-     padding: 8px 12px;
-     border: none;
-     border-radius: 4px;
-     cursor: pointer;
-}
-#clear-logs-btn:hover {
-     background-color: #7f8c8d;
-}
+/* Mensagens de Status */
+.status-message { margin-top: 15px; padding: 10px 15px; border-radius: 6px; font-size: 0.95em; border: 1px solid transparent; word-break: break-word; }
+.status-message:empty { display: none; }
+.status-message.success { background-color: #dff0d8; color: #3c763d; border-color: #d6e9c6;}
+.status-message.error { background-color: #f2dede; color: #a94442; border-color: #ebccd1;}
+.status-message.info { background-color: #d9edf7; color: #31708f; border-color: #bce8f1;}
