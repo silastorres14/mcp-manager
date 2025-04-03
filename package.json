@@ -1,7 +1,7 @@
 {
     "name": "mcp-manager",
-    "version": "1.1.0",
-    "description": "Gerenciador local para servidores MCP com clonagem Git centralizada",
+    "version": "1.3.0", 
+    "description": "Gerenciador local para servidores MCP com clonagem Git, edição na UI e adição por JSON",
     "main": "server.js",
     "bin": "server.js",
     "scripts": {
@@ -13,9 +13,11 @@
       "mcp",
       "manager",
       "server",
-      "git"
+      "git",
+      "ui",
+      "json"
     ],
-    "author": "Seu Nome",
+    "author": "Silas Torres",
     "license": "ISC",
     "dependencies": {
       "cors": "^2.8.5",

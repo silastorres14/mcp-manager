@@ -16,59 +16,51 @@
              <label for="git-url">URL do Repositório Git (.git):</label>
              <input type="url" id="git-url" placeholder="https://github.com/usuario/repo.git" required>
          </div>
-         <p><small>Servidores serão clonados automaticamente na subpasta 'cloned_servers'.</small></p>
-         <button id="clone-btn">Clonar Repositório</button>
+         <p><small>Clona na pasta 'cloned_servers' e adiciona um placeholder à lista abaixo (edite-o!).</small></p>
+         <button id="clone-btn">Clonar e Adicionar Placeholder</button>
          <div id="clone-status" class="status-message"></div>
     </div>
-    <!-- FIM DA SEÇÃO -->
+
+    <!-- NOVA SEÇÃO: ADICIONAR POR JSON -->
+     <div class="add-json-container card">
+         <h2>Adicionar Configuração por JSON</h2>
+         <div class="form-group">
+             <label for="server-json-config">Cole a configuração JSON do servidor aqui:</label>
+             <textarea id="server-json-config" rows="8" placeholder='{\n  "name": "NomeServidor",\n  "description": "Descricao",\n  "command": "node",\n  "args": ["script.js", "--arg1"],\n  "env": {"API_KEY": "valor"}\n}'></textarea>
+              <small>Certifique-se de que o JSON é válido. O campo "id" será ignorado/gerado.</small>
+         </div>
+         <button id="add-from-json-btn">Adicionar a partir de JSON</button>
+         <div id="add-json-status" class="status-message"></div>
+     </div>
+    <!-- FIM DA NOVA SEÇÃO -->
 
 
     <div class="container">
         <div class="server-list-container card">
             <h2>Servidores Configurados</h2>
             <ul id="server-list">
-                <!-- Servidores serão carregados aqui -->
                 <li>Carregando servidores...</li>
             </ul>
-             <!-- Botão Adicionar fica fora da lista -->
-            <button id="add-server-btn">Adicionar Novo Servidor</button>
+            <button id="add-server-btn">Adicionar Servidor Manualmente</button> <!-- Texto do botão mudou -->
         </div>
 
         <div class="details-container">
-             <!-- Formulário é mostrado/escondido dinamicamente -->
+             <!-- Formulário (usado para Add Manual e Edit) -->
             <div id="server-form-container" class="card" style="display: none;">
                 <h2 id="form-title">Adicionar Servidor</h2>
                 <form id="server-form">
-                    <input type="hidden" id="server-id"> <!-- Campo oculto para ID ao editar -->
-                    <div class="form-group">
-                        <label for="server-name">Nome:</label>
-                        <input type="text" id="server-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="server-description">Descrição:</label>
-                        <input type="text" id="server-description">
-                    </div>
-                    <div class="form-group">
-                        <label for="server-command">Comando:</label>
-                        <input type="text" id="server-command" placeholder="ex: node ou /caminho/absoluto/exec" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="server-args">Argumentos (separados por vírgula):</label>
-                        <input type="text" id="server-args" placeholder="ex: /path/to/script.js, --port, 8000">
-                         <small>Use vírgulas para separar múltiplos argumentos.</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="server-env">Variáveis de Ambiente (Formato JSON):</label>
-                        <textarea id="server-env" placeholder='ex: {"API_KEY": "seu_valor", "NODE_ENV": "production"}'></textarea>
-                         <small>Insira um objeto JSON válido ou deixe em branco.</small>
-                    </div>
-
+                    <input type="hidden" id="server-id">
+                    <div class="form-group"><label for="server-name">Nome:</label><input type="text" id="server-name" required></div>
+                    <div class="form-group"><label for="server-description">Descrição:</label><input type="text" id="server-description"></div>
+                    <div class="form-group"><label for="server-command">Comando:</label><input type="text" id="server-command" placeholder="ex: node ou /caminho/absoluto/exec" required></div>
+                    <div class="form-group"><label for="server-args">Argumentos (separados por vírgula):</label><input type="text" id="server-args" placeholder="ex: /path/script.js, --port, 8000"><small>Use vírgulas.</small></div>
+                    <div class="form-group"><label for="server-env">Variáveis de Ambiente (JSON):</label><textarea id="server-env" placeholder='ex: {"API_KEY": "valor"}'></textarea><small>Objeto JSON válido.</small></div>
                     <button type="submit" id="save-server-btn">Salvar</button>
                     <button type="button" id="cancel-edit-btn">Cancelar</button>
                 </form>
             </div>
 
-            <!-- Container de Logs -->
+            <!-- Logs -->
             <div id="log-container" class="card" style="display: none;">
                 <h2>Logs (<span id="log-server-name"></span>)</h2>
                 <pre id="logs"></pre>

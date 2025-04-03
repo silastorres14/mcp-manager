@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos da UI
+    // --- Elementos da UI ---
     const serverList = document.getElementById('server-list');
     const logsOutput = document.getElementById('logs');
     const logContainer = document.getElementById('log-container');
@@ -7,141 +7,127 @@ document.addEventListener('DOMContentLoaded', () => {
     const serverFormContainer = document.getElementById('server-form-container');
     const serverForm = document.getElementById('server-form');
     const formTitle = document.getElementById('form-title');
-    const serverIdInput = document.getElementById('server-id'); // Input oculto para ID
+    const serverIdInput = document.getElementById('server-id');
     const addServerBtn = document.getElementById('add-server-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const clearLogsBtn = document.getElementById('clear-logs-btn');
-    // Elementos Git Clone
+    // Git Clone
     const gitUrlInput = document.getElementById('git-url');
     const cloneBtn = document.getElementById('clone-btn');
     const cloneStatus = document.getElementById('clone-status');
+    // Add JSON
+    const jsonConfigTextarea = document.getElementById('server-json-config');
+    const addFromJsonBtn = document.getElementById('add-from-json-btn');
+    const addJsonStatus = document.getElementById('add-json-status');
 
-    // Estado
-    let currentServers = []; // Cache local, atualizado via WebSocket
+    // --- Estado ---
+    let currentServers = [];
     let selectedServerId = null;
     let webSocket = null;
-    const apiBaseUrl = ''; // Backend na mesma origem
+    let statusTimeout; // Para mensagens de status temporárias
+    const apiBaseUrl = '';
 
-    // --- WebSocket Connection ---
+    // --- WebSocket ---
     function connectWebSocket() {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${wsProtocol}//${window.location.host}`;
-        console.log(`Attempting WebSocket connection to: ${wsUrl}`);
+        console.log(`Connecting WebSocket: ${wsUrl}`);
         webSocket = new WebSocket(wsUrl);
-
-        webSocket.onopen = () => { console.log('WebSocket connected'); setCloneStatus('Conectado ao backend.', 'success', 3000); };
-        webSocket.onmessage = (event) => { try { handleWebSocketMessage(JSON.parse(event.data)); } catch (e) { console.error("Error processing WebSocket message:", event.data, e); }};
-        webSocket.onerror = (error) => { console.error('WebSocket Error:', error); setCloneStatus('Erro no WebSocket. Backend está rodando?', 'error'); };
-        webSocket.onclose = (event) => {
-            console.log(`WebSocket disconnected. Code: ${event.code}. Reconnecting...`);
-            setCloneStatus('WebSocket desconectado. Tentando reconectar...', 'info');
-            setTimeout(connectWebSocket, 5000);
-        };
+        webSocket.onopen = () => { console.log('WS connected'); setStatusMessage(cloneStatus, 'Backend conectado.', 'success', 3000); };
+        webSocket.onmessage = (event) => { try { handleWebSocketMessage(JSON.parse(event.data)); } catch (e) { console.error("WS msg parse error:", e); }};
+        webSocket.onerror = (error) => { console.error('WS Error:', error); setStatusMessage(cloneStatus, 'Erro WS. Backend rodando?', 'error'); };
+        webSocket.onclose = (e) => { console.log(`WS disconnected (Code: ${e.code}). Reconnecting...`); setStatusMessage(cloneStatus, 'WS desconectado. Reconectando...', 'info'); setTimeout(connectWebSocket, 5000); };
     }
 
     function handleWebSocketMessage(data) {
-        // console.log('WS Message:', data); // Debug
         switch (data.type) {
             case 'initial_state':
-            case 'config_update': // Recebe a lista COMPLETA e atualizada do backend
+            case 'config_update':
                 currentServers = data.servers || [];
-                renderServerList(); // Redesenha a lista com os dados recebidos
-                 // Se o servidor que estava selecionado (para logs/edição) foi removido, limpa a seleção
+                renderServerList();
+                 // Desseleciona se o servidor selecionado sumiu
                  if (selectedServerId && !currentServers.some(s => s.id === selectedServerId)) {
                      selectServer(null);
                  } else if (selectedServerId && serverFormContainer.style.display !== 'none') {
-                     // Se estava editando e houve update, recarrega dados no form (opcional)
-                     const updatedServer = currentServers.find(s => s.id === selectedServerId);
-                     if (updatedServer) showForm(updatedServer);
+                     // Atualiza form se estava editando e config mudou externamente
+                     const updated = currentServers.find(s => s.id === selectedServerId);
+                     if (updated) showForm(updated); else hideForm(); // Fecha se sumiu
                  }
                 break;
             case 'status':
-                updateServerStatusUI(data.serverId, data.status); // Atualiza indicador e botões
-                 // Atualiza o estado local (cache) para consistência imediata
+                updateServerStatusUI(data.serverId, data.status);
                  const serverIdx = currentServers.findIndex(s => s.id === data.serverId);
-                 if (serverIdx > -1) currentServers[serverIdx].status = data.status;
-                 // Log de status
-                 if (selectedServerId === data.serverId) {
-                     const logMsg = `[STATUS] ${data.status}${data.message ? ': ' + data.message : ''}${data.code !== undefined ? ' (code: ' + data.code + ')' : ''}${data.pid ? ' [PID: ' + data.pid + ']' : ''}`;
-                     appendLog(logMsg, 'status');
-                 }
+                 if (serverIdx > -1) currentServers[serverIdx].status = data.status; // Atualiza cache local
+                 if (selectedServerId === data.serverId) { appendLog(`[STATUS] ${data.status}${data.pid ? ' (PID:'+data.pid+')' : ''}${data.code !== undefined ? ' Code:'+data.code : ''}${data.message ? ' Msg:'+data.message : ''}`, 'status'); }
                 break;
             case 'log':
                 if (selectedServerId === data.serverId) { appendLog(data.message, data.stream); }
                 break;
-             default: console.warn("Mensagem WebSocket não reconhecida:", data);
+             default: console.warn("WS msg type?", data);
         }
     }
 
-    // --- API Interaction ---
+    // --- API ---
     async function apiRequest(url, options = {}) {
         try {
             const response = await fetch(`${apiBaseUrl}${url}`, options);
-            if (!response.ok) {
-                 let errorMsg = `Erro ${response.status}`;
-                 try { const errBody = await response.json(); errorMsg = errBody.message || errorMsg; }
-                 catch(e) { /* Ignore se corpo não for JSON */ }
-                 throw new Error(errorMsg);
-            }
+            if (!response.ok) { let msg = `Erro ${response.status}`; try { const err = await response.json(); msg = err.message || msg; } catch(e){} throw new Error(msg); }
              return (response.status === 204) ? null : await response.json();
-        } catch (error) { console.error(`API Request failed: ${options.method || 'GET'} ${url}`, error); throw error; }
+        } catch (error) { console.error(`API Req failed: ${options.method || 'GET'} ${url}`, error); throw error; }
     }
+    async function fetchServers() { try { currentServers = await apiRequest('/api/servers'); renderServerList(); } catch (error) { serverList.innerHTML = '<li>Erro ao carregar.</li>'; } }
+    async function sendServerAction(id, action) { try { updateServerStatusUI(id, action === 'start' ? 'starting' : 'stopping'); await apiRequest(`/api/servers/${id}/${action}`, { method: 'POST' }); appendLog(`[CMD] ${action} enviado.`, 'status'); } catch (error) { appendLog(`[ERRO] ${action}: ${error.message}`, 'stderr'); fetchServers(); } }
+    async function cloneGitRepo(repoUrl) { setStatusMessage(cloneStatus, 'Clonando...', 'info'); cloneBtn.disabled = true; try { const result = await apiRequest('/api/git/clone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repoUrl }) }); setStatusMessage(cloneStatus, `${result.message} Path: ${result.path}. Edite o placeholder abaixo!`, 'success', 15000); gitUrlInput.value = ''; } catch (error) { setStatusMessage(cloneStatus, `Erro clone: ${error.message}`, 'error'); } finally { cloneBtn.disabled = false; } }
+    async function saveServer(serverData) { const isUpdate = !!serverData.id; try { await apiRequest(isUpdate ? `/api/servers/${serverData.id}` : '/api/servers', { method: isUpdate ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverData) }); setStatusMessage(cloneStatus, `Servidor ${isUpdate ? 'atualizado' : 'adicionado'}!`, 'success', 3000); hideForm(); /* Atualização via WS */ } catch (error) { alert(`Erro ao salvar: ${error.message}`); } }
+    async function deleteServer(id, name) { if (!confirm(`Remover "${name || id}"? Pasta NÃO será deletada.`)) return; try { await apiRequest(`/api/servers/${id}`, { method: 'DELETE' }); setStatusMessage(cloneStatus, `Servidor "${name || id}" removido.`, 'success', 3000); if (selectedServerId === id) selectServer(null); /* Atualização via WS */ } catch (error) { alert(`Erro ao remover: ${error.message}`); } }
 
-    async function fetchServers() { try { currentServers = await apiRequest('/api/servers'); renderServerList(); } catch (error) { serverList.innerHTML = '<li>Erro ao carregar servidores.</li>'; } }
-    async function sendServerAction(id, action) { try { updateServerStatusUI(id, action === 'start' ? 'starting' : 'stopping'); await apiRequest(`/api/servers/${id}/${action}`, { method: 'POST' }); appendLog(`[CMD] Comando '${action}' enviado.`, 'status'); } catch (error) { appendLog(`[ERRO] Falha ao ${action} servidor: ${error.message}`, 'stderr'); fetchServers(); } }
-    async function cloneGitRepo(repoUrl) { setCloneStatus('Clonando...', 'info'); cloneBtn.disabled = true; try { const result = await apiRequest('/api/git/clone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repoUrl }) }); setCloneStatus(`${result.message} Clonado em: ${result.path}. Adicione-o à lista!`, 'success', 10000); gitUrlInput.value = ''; } catch (error) { setCloneStatus(`Erro ao clonar: ${error.message}`, 'error'); } finally { cloneBtn.disabled = false; } }
-
-     // Salvar (Add ou Update)
-     async function saveServer(serverData) {
-         const isUpdating = !!serverData.id;
-         const url = isUpdating ? `/api/servers/${serverData.id}` : '/api/servers';
-         const method = isUpdating ? 'PUT' : 'POST';
-         const actionText = isUpdating ? 'atualizar' : 'adicionar';
-
+     // --- Lógica para Adicionar via JSON ---
+     async function addServerFromJson(jsonString) {
+         setStatusMessage(addJsonStatus, 'Processando JSON...', 'info');
+         addFromJsonBtn.disabled = true;
          try {
-              await apiRequest(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverData) });
-              console.log(`Servidor ${actionText}do com sucesso.`);
-              setCloneStatus(`Servidor ${actionText}do com sucesso!`, 'success', 3000); // Usa a área de status do clone para feedback geral
-              hideForm();
-              // A UI será atualizada via WebSocket ('config_update')
+             const parsedConfig = JSON.parse(jsonString);
+
+             // Validação básica do objeto parseado
+             if (typeof parsedConfig !== 'object' || parsedConfig === null || Array.isArray(parsedConfig)) {
+                 throw new Error("O JSON fornecido não é um objeto válido.");
+             }
+             if (!parsedConfig.name || !parsedConfig.command) {
+                 throw new Error("JSON deve conter pelo menos 'name' e 'command'.");
+             }
+
+             // Remove ID se existir para garantir que backend gere um novo
+             delete parsedConfig.id;
+
+             // Chama a API de adicionar servidor
+             await apiRequest('/api/servers', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify(parsedConfig) // Envia o objeto parseado
+             });
+
+             setStatusMessage(addJsonStatus, `Servidor "${parsedConfig.name}" adicionado via JSON!`, 'success', 5000);
+             jsonConfigTextarea.value = ''; // Limpa textarea
+
          } catch (error) {
-              alert(`Erro ao ${actionText} servidor: ${error.message}`); // Usa alert para erros de save
+             console.error("Erro ao adicionar via JSON:", error);
+             setStatusMessage(addJsonStatus, `Erro: ${error.message}`, 'error');
+         } finally {
+             addFromJsonBtn.disabled = false;
          }
      }
 
-     // Deletar
-     async function deleteServer(id, name) {
-         if (!confirm(`Tem certeza que deseja remover o servidor "${name || id}" da configuração? A pasta clonada (se houver) NÃO será afetada.`)) return;
-
-         try {
-             await apiRequest(`/api/servers/${id}`, { method: 'DELETE' });
-             console.log(`Servidor ${id} removido com sucesso.`);
-             setCloneStatus(`Servidor "${name || id}" removido.`, 'success', 3000);
-              if (selectedServerId === id) { selectServer(null); } // Desseleciona se era o ativo
-              // A UI será atualizada via WebSocket ('config_update')
-         } catch (error) {
-             alert(`Erro ao remover servidor: ${error.message}`);
-         }
-     }
-
-    // --- UI Rendering and Logic ---
+    // --- UI Rendering ---
     function renderServerList() {
-        serverList.innerHTML = ''; // Limpa antes de redesenhar
-        if (!currentServers || currentServers.length === 0) {
-             serverList.innerHTML = '<li>Nenhum servidor configurado.</li>';
-             return;
-        }
-
-        // Ordena alfabeticamente pelo nome para consistência
-        const sortedServers = [...currentServers].sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
-
-        sortedServers.forEach(server => {
+        serverList.innerHTML = '';
+        if (!currentServers || currentServers.length === 0) { serverList.innerHTML = '<li>Nenhum servidor configurado.</li>'; return; }
+        const sorted = [...currentServers].sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+        sorted.forEach(server => {
             const li = document.createElement('li');
             li.dataset.serverId = server.id;
             li.classList.toggle('selected', server.id === selectedServerId);
             const status = server.status || 'stopped';
             const isRunningOrTransient = status === 'running' || status === 'starting' || status === 'stopping';
-
             li.innerHTML = `
                 <div class="server-info">
                      <div class="server-info-main">
@@ -151,168 +137,111 @@ document.addEventListener('DOMContentLoaded', () => {
                      ${server.description ? `<span class="server-description">${server.description}</span>` : ''}
                 </div>
                 <div class="server-actions">
-                    <button class="start-btn" title="Ligar Servidor" ${isRunningOrTransient ? 'disabled' : ''}>▶</button>
-                    <button class="stop-btn" title="Desligar Servidor" ${status !== 'running' ? 'disabled' : ''}>■</button>
-                    <button class="edit-btn" title="Editar Configuração" ${isRunningOrTransient ? 'disabled' : ''}>✎</button>
-                    <button class="delete-btn" title="Remover da Lista" ${isRunningOrTransient ? 'disabled' : ''}>🗑</button>
-                </div>
-            `;
-
-            // Event Listeners para os botões de ação
-            li.querySelector('.start-btn').addEventListener('click', (e) => { e.stopPropagation(); sendServerAction(server.id, 'start'); });
-            li.querySelector('.stop-btn').addEventListener('click', (e) => { e.stopPropagation(); sendServerAction(server.id, 'stop'); });
-            li.querySelector('.edit-btn').addEventListener('click', (e) => { e.stopPropagation(); selectServer(null); showForm(server); }); // Desseleciona logs e mostra form
-            li.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteServer(server.id, server.name); });
-            li.addEventListener('click', () => selectServer(server.id)); // Seleciona para ver logs
-
+                    <button class="start-btn" title="Ligar" ${isRunningOrTransient ? 'disabled' : ''}>▶</button>
+                    <button class="stop-btn" title="Desligar" ${status !== 'running' ? 'disabled' : ''}>■</button>
+                    <button class="edit-btn" title="Editar" ${isRunningOrTransient ? 'disabled' : ''}>✎</button>
+                    <button class="delete-btn" title="Remover" ${isRunningOrTransient ? 'disabled' : ''}>🗑</button>
+                </div>`;
+            // Listeners
+            li.querySelector('.start-btn').onclick = (e) => { e.stopPropagation(); sendServerAction(server.id, 'start'); };
+            li.querySelector('.stop-btn').onclick = (e) => { e.stopPropagation(); sendServerAction(server.id, 'stop'); };
+            li.querySelector('.edit-btn').onclick = (e) => { e.stopPropagation(); selectServer(null); showForm(server); };
+            li.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deleteServer(server.id, server.name); };
+            li.onclick = () => selectServer(server.id);
             serverList.appendChild(li);
         });
     }
 
      function selectServer(id) {
-         if (id === null) { // Desselecionar
-             if (selectedServerId) {
-                 const oldLi = serverList.querySelector(`li[data-server-id="${selectedServerId}"]`);
-                 if (oldLi) oldLi.classList.remove('selected');
-             }
-             selectedServerId = null;
-             hideLogs();
-             // Não esconde o form aqui, deixa o showForm/hideForm controlar
-             return;
-         }
-
-         if (selectedServerId === id) return; // Já selecionado
-
-         // Desseleciona anterior
-         if (selectedServerId) {
-             const oldLi = serverList.querySelector(`li[data-server-id="${selectedServerId}"]`);
-             if (oldLi) oldLi.classList.remove('selected');
-         }
-
-         // Seleciona novo
+         if (selectedServerId === id && id !== null) return; // Não faz nada se clicar no já selecionado
+         // Desseleciona antigo
+         if (selectedServerId) { const oldLi = serverList.querySelector(`li[data-server-id="${selectedServerId}"]`); if (oldLi) oldLi.classList.remove('selected'); }
          selectedServerId = id;
-         const newLi = serverList.querySelector(`li[data-server-id="${id}"]`);
-         if (newLi) newLi.classList.add('selected');
-
-         const server = currentServers.find(s => s.id === id);
-         if (server) {
-             showLogs(server.name || id);
-             hideForm(); // Esconde o form se estava aberto
-         } else {
-             hideLogs(); // Servidor não encontrado (não deveria acontecer)
+         if (id !== null) { // Seleciona novo
+             const newLi = serverList.querySelector(`li[data-server-id="${id}"]`); if (newLi) newLi.classList.add('selected');
+             const server = currentServers.find(s => s.id === id);
+             if (server) { showLogs(server.name || id); hideForm(); } else { hideLogs(); }
+         } else { // Desseleciona tudo
+             hideLogs(); hideForm();
          }
      }
 
-    // Atualiza apenas UI (indicador, botões)
-    function updateServerStatusUI(id, status) {
-        const li = serverList.querySelector(`li[data-server-id="${id}"]`);
-        if (!li) return;
-        const indicator = li.querySelector('.status-indicator');
-        const startBtn = li.querySelector('.start-btn');
-        const stopBtn = li.querySelector('.stop-btn');
-        const editBtn = li.querySelector('.edit-btn');
-        const deleteBtn = li.querySelector('.delete-btn');
-        if (!indicator || !startBtn || !stopBtn || !editBtn || !deleteBtn) return; // Segurança
-
-        indicator.className = `status-indicator status-${status}`;
+    function updateServerStatusUI(id, status) { /* ... (mesma lógica de antes para atualizar botões/indicador) ... */
+        const li = serverList.querySelector(`li[data-server-id="${id}"]`); if (!li) return;
+        const indicator = li.querySelector('.status-indicator'); if (indicator) indicator.className = `status-indicator status-${status}`;
         const isRunningOrTransient = status === 'running' || status === 'starting' || status === 'stopping';
-        startBtn.disabled = isRunningOrTransient;
-        stopBtn.disabled = status !== 'running'; // Só pode parar se estiver rodando
-        editBtn.disabled = isRunningOrTransient;
-        deleteBtn.disabled = isRunningOrTransient;
+        const isRunning = status === 'running';
+        li.querySelector('.start-btn').disabled = isRunningOrTransient;
+        li.querySelector('.stop-btn').disabled = !isRunning; // Só habilita stop se running
+        li.querySelector('.edit-btn').disabled = isRunningOrTransient;
+        li.querySelector('.delete-btn').disabled = isRunningOrTransient;
     }
 
-    function appendLog(message, type = 'stdout') {
-         if (!logContainer.style.display || logContainer.style.display === 'none') return;
-        const logEntry = document.createElement('div');
-        logEntry.classList.add(`log-${type}`);
-        logEntry.textContent = message;
-        logsOutput.appendChild(logEntry);
-        const shouldScroll = logsOutput.scrollTop + logsOutput.clientHeight >= logsOutput.scrollHeight - 50;
-        if (shouldScroll) logsOutput.scrollTop = logsOutput.scrollHeight;
+    function appendLog(message, type = 'stdout') { /* ... (mesma lógica de antes) ... */
+        if (!logContainer.style.display || logContainer.style.display === 'none') return;
+        const entry = document.createElement('div'); entry.className = `log-${type}`; entry.textContent = message;
+        logsOutput.appendChild(entry);
+        if (logsOutput.scrollTop + logsOutput.clientHeight >= logsOutput.scrollHeight - 50) logsOutput.scrollTop = logsOutput.scrollHeight;
     }
+    function showLogs(name) { logServerName.textContent = name; logsOutput.innerHTML = ''; appendLog(`--- Logs: ${name} ---`, 'status'); logContainer.style.display = 'block'; }
+    function hideLogs() { logContainer.style.display = 'none'; }
 
-     function showLogs(serverName) { logServerName.textContent = serverName; logsOutput.innerHTML = ''; appendLog(`--- Logs para ${serverName} ---`, 'status'); logContainer.style.display = 'block'; }
-     function hideLogs() { logContainer.style.display = 'none'; }
-
-     // Mostra o formulário (para Adicionar ou Editar)
+    // Mostra/Esconde Formulário
      function showForm(server = null) {
          const isEditing = !!server;
-         formTitle.textContent = isEditing ? `Editar: ${server.name || server.id}` : 'Adicionar Novo Servidor';
-         serverIdInput.value = isEditing ? server.id : ''; // Define ou limpa o ID oculto
+         formTitle.textContent = isEditing ? `Editar: ${server.name || server.id}` : 'Adicionar Servidor Manualmente';
+         serverIdInput.value = isEditing ? server.id : '';
+         // Preenche o formulário (importante para edição funcionar)
          document.getElementById('server-name').value = isEditing ? (server.name || '') : '';
          document.getElementById('server-description').value = isEditing ? (server.description || '') : '';
          document.getElementById('server-command').value = isEditing ? (server.command || '') : '';
-         // Converte array de args para string separada por vírgula para o input
          document.getElementById('server-args').value = isEditing ? (server.args || []).join(', ') : '';
-         // Converte objeto env para string JSON formatada para o textarea
          document.getElementById('server-env').value = isEditing ? JSON.stringify(server.env || {}, null, 2) : '{}';
 
-         selectServer(null); // Garante que nenhum servidor esteja selecionado na lista
-         hideLogs(); // Esconde os logs
-         serverFormContainer.style.display = 'block'; // Mostra o form
-         document.getElementById('server-name').focus(); // Foca no primeiro campo
+         selectServer(null); hideLogs(); serverFormContainer.style.display = 'block';
+         document.getElementById('server-name').focus();
      }
-
      function hideForm() { serverFormContainer.style.display = 'none'; serverForm.reset(); serverIdInput.value = ''; }
 
-     // Helper para status do clone (ou geral)
-     let statusTimeout;
-     function setCloneStatus(message, type = 'info', timeout = 0) {
-         clearTimeout(statusTimeout);
-         cloneStatus.textContent = message;
-         cloneStatus.className = `status-message ${type}`;
-         if (timeout > 0) { statusTimeout = setTimeout(() => { cloneStatus.textContent = ''; cloneStatus.className = 'status-message'; }, timeout); }
+     // Helper de Status Message
+     function setStatusMessage(element, message, type = 'info', timeout = 0) {
+         clearTimeout(statusTimeout); element.textContent = message; element.className = `status-message ${type}`;
+         if (timeout > 0) statusTimeout = setTimeout(() => { element.textContent = ''; element.className = 'status-message'; }, timeout);
      }
 
     // --- Event Listeners ---
     addServerBtn.addEventListener('click', () => showForm()); // Mostra form vazio
     cancelEditBtn.addEventListener('click', () => hideForm());
-    clearLogsBtn.addEventListener('click', () => { if (selectedServerId) { logsOutput.innerHTML = ''; appendLog(`--- Logs limpos para ${logServerName.textContent} ---`, 'status'); }});
+    clearLogsBtn.addEventListener('click', () => { if (selectedServerId) { logsOutput.innerHTML = ''; appendLog(`--- Logs limpos: ${logServerName.textContent} ---`, 'status'); }});
 
-    // Submit do formulário (Adicionar ou Editar)
+    // Submit do Formulário (Adicionar Manual ou Editar)
     serverForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const id = serverIdInput.value || undefined; // Pega ID do campo oculto (se houver)
-        const envValue = document.getElementById('server-env').value;
-        let envJson = {};
-
-        // Valida JSON das variáveis de ambiente
-        try {
-            if (envValue.trim()) {
-                envJson = JSON.parse(envValue);
-                if (typeof envJson !== 'object' || envJson === null || Array.isArray(envJson)) throw new Error("Deve ser um objeto JSON.");
-            }
-        } catch (err) { alert('Variáveis de Ambiente (JSON) inválido: ' + err.message); return; }
-
-        // Processa args (string separada por vírgula para array)
-        const argsArray = document.getElementById('server-args').value.split(',').map(arg => arg.trim()).filter(Boolean);
-
-        const serverData = {
-            id: id, // Será undefined se for novo, ou terá valor se for edição
-            name: document.getElementById('server-name').value.trim(),
-            description: document.getElementById('server-description').value.trim(),
-            command: document.getElementById('server-command').value.trim(),
-            args: argsArray,
-            env: envJson
-        };
-
-        if (!serverData.name || !serverData.command) { alert("Nome e Comando são obrigatórios."); return; }
-
-        saveServer(serverData); // Chama a função API para salvar (ela decide se é POST ou PUT)
+        const id = serverIdInput.value || undefined;
+        const envValue = document.getElementById('server-env').value; let envJson = {};
+        try { if (envValue.trim()) { envJson = JSON.parse(envValue); if (typeof envJson !== 'object' || envJson === null || Array.isArray(envJson)) throw new Error("Deve ser objeto."); }}
+        catch (err) { alert('JSON Env inválido: ' + err.message); return; }
+        const argsArray = document.getElementById('server-args').value.split(',').map(a => a.trim()).filter(Boolean);
+        const data = { id, name: document.getElementById('server-name').value.trim(), description: document.getElementById('server-description').value.trim(), command: document.getElementById('server-command').value.trim(), args: argsArray, env: envJson };
+        if (!data.name || !data.command) { alert("Nome e Comando são obrigatórios."); return; }
+        saveServer(data);
     });
 
-    // Listener para botão Clonar
-    cloneBtn.addEventListener('click', () => {
-        const repoUrl = gitUrlInput.value.trim();
-        if (!repoUrl) { setCloneStatus('Por favor, preencha a URL do Git.', 'error', 5000); return; }
-        if (!repoUrl.includes('://') && !repoUrl.endsWith('.git') && !repoUrl.includes('@')) {
-             if (!confirm("A URL não parece ser HTTPS ou terminar com .git ou ser SSH. Continuar?")) return;
-        }
+    // Botão Clonar Git
+    cloneBtn.addEventListener('click', () => { /* ... (lógica de clonar existente) ... */
+        const repoUrl = gitUrlInput.value.trim(); if (!repoUrl) { setStatusMessage(cloneStatus, 'URL Git obrigatória.', 'error', 5000); return; }
+        if (!repoUrl.includes('://') && !repoUrl.endsWith('.git') && !repoUrl.includes('@')) { if (!confirm("URL suspeita. Continuar?")) return; }
         cloneGitRepo(repoUrl);
+    });
+
+    // Botão Adicionar por JSON
+    addFromJsonBtn.addEventListener('click', () => {
+        const jsonString = jsonConfigTextarea.value.trim();
+        if (!jsonString) { setStatusMessage(addJsonStatus, 'Cole a configuração JSON na área acima.', 'error', 5000); return; }
+        addServerFromJson(jsonString);
     });
 
     // --- Initial Load ---
     fetchServers();
     connectWebSocket();
-}); // Fim do DOMContentLoaded
+}); // Fim

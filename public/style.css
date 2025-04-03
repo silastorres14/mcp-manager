@@ -1,192 +1,74 @@
 /* Reset básico */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.6;
-    background-color: #f0f2f5;
-    color: #1c1e21;
-    padding: 20px;
-}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; background-color: #f0f2f5; color: #1c1e21; padding: 20px; }
 
-h1, h2 {
-    color: #1d2129;
-    margin-bottom: 1em;
-}
-h1 {
-    text-align: center;
-    border-bottom: 1px solid #dddfe2;
-    padding-bottom: 0.5em;
-    margin-bottom: 1.5em;
-    font-size: 1.8em;
-}
-h2 {
-    font-size: 1.3em;
-    border-bottom: 1px solid #e4e6eb;
-    padding-bottom: 0.4em;
-    margin-bottom: 0.8em; /* Less margin for H2 */
-}
+h1, h2 { color: #1d2129; margin-bottom: 1em; }
+h1 { text-align: center; border-bottom: 1px solid #dddfe2; padding-bottom: 0.5em; margin-bottom: 1.5em; font-size: 1.8em; }
+h2 { font-size: 1.3em; border-bottom: 1px solid #e4e6eb; padding-bottom: 0.4em; margin-bottom: 0.8em; }
 
-/* Estilo geral para 'cards' */
-.card {
-    background-color: #ffffff;
-    border: 1px solid #dddfe2;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
+/* Cards */
+.card { background-color: #ffffff; border: 1px solid #dddfe2; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); }
 
-.container {
-    display: flex;
-    flex-wrap: wrap; /* Allow wrapping */
-    gap: 30px;
-    max-width: 1400px;
-    margin: 20px auto;
-}
-
-.server-list-container {
-    flex: 1;
-    min-width: 350px;
-    max-width: 550px; /* Slightly wider maybe */
-    align-self: flex-start;
-}
-
-.details-container {
-    flex: 2;
-    min-width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
+.container { display: flex; flex-wrap: wrap; gap: 30px; max-width: 1400px; margin: 20px auto; }
+.server-list-container { flex: 1; min-width: 350px; max-width: 550px; align-self: flex-start; }
+.details-container { flex: 2; min-width: 400px; display: flex; flex-direction: column; gap: 20px; }
 
 /* Lista de Servidores */
-#server-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    max-height: 65vh; /* Limit height */
-    overflow-y: auto; /* Enable scroll */
-    border: 1px solid #e4e6eb;
-    border-radius: 6px;
-    margin-bottom: 15px;
-}
-
-#server-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    border-bottom: 1px solid #e4e6eb;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    word-break: break-word;
-}
+#server-list { list-style: none; padding: 0; margin: 0 0 15px 0; max-height: 65vh; overflow-y: auto; border: 1px solid #e4e6eb; border-radius: 6px; }
+#server-list li { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #e4e6eb; cursor: pointer; transition: background-color 0.2s ease; word-break: break-word; }
 #server-list li:last-child { border-bottom: none; }
 #server-list li:hover { background-color: #f0f2f5; }
 #server-list li.selected { background-color: #e7f3ff; font-weight: 600; }
-#server-list li .server-description { /* Added class for description */
-     font-size: 0.85em;
-     color: #606770;
-     margin-left: 22px; /* Indent under name */
-     display: block; /* Make it appear on new line */
-     margin-top: 2px;
-}
+#server-list li .server-description { font-size: 0.85em; color: #606770; display: block; margin-top: 2px; padding-left: 22px; } /* Indentado */
 
-
-.server-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-grow: 1;
-    margin-right: 10px;
-    /* Allow wrapping for description */
-    flex-direction: column;
-    align-items: flex-start;
-}
-.server-info-main { /* Group indicator and name */
-     display: flex;
-     align-items: center;
-     gap: 12px;
-}
+.server-info { display: flex; align-items: flex-start; /* Align status top */ gap: 12px; flex-grow: 1; margin-right: 10px; flex-direction: column; }
+.server-info-main { display: flex; align-items: center; gap: 12px; }
 .server-info-main span { flex-shrink: 1; }
 
-
-.status-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow: 0 0 3px rgba(0,0,0,0.3);
-}
+.status-indicator { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 3px rgba(0,0,0,0.3); margin-top: 4px; /* Align better */ }
 .status-running { background-color: #42b72a; box-shadow: 0 0 5px #42b72a; }
 .status-stopped { background-color: #adb5bd; }
 .status-starting, .status-stopping { background-color: #ffc107; animation: blink 1s infinite; }
 .status-error { background-color: #fa383e; border: 1px solid #dc3545;}
-
 @keyframes blink { 50% { opacity: 0.4; } }
 
-.server-actions { display: flex; gap: 5px; flex-shrink: 0; }
+.server-actions { display: flex; gap: 5px; flex-shrink: 0; align-items: center; /* Align buttons vertically */ }
 
-/* General button styling */
-button, .server-actions button, #add-server-btn {
-    background-color: #e4e6eb;
-    color: #4b4f56;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 600;
-    transition: background-color 0.2s ease, filter 0.2s ease;
-    white-space: nowrap; /* Prevent button text wrapping */
-}
+/* Botões */
+button, .server-actions button, #add-server-btn { background-color: #e4e6eb; color: #4b4f56; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 600; transition: background-color 0.2s ease, filter 0.2s ease; white-space: nowrap; }
 button:hover, .server-actions button:hover, #add-server-btn:hover { filter: brightness(95%); }
 button:disabled, .server-actions button:disabled { background-color: #f0f2f5; color: #bec3c9; cursor: not-allowed; }
-
-/* Specific Button Colors / Styles */
-.server-actions .start-btn { background-color: #42b72a; color: white; font-size: 1.1em; padding: 4px 8px;} /* Make icons slightly bigger */
+/* Ícones como texto */
+.server-actions .start-btn { background-color: #42b72a; color: white; font-size: 1.1em; padding: 4px 8px;}
 .server-actions .stop-btn { background-color: #fa383e; color: white; font-size: 1.1em; padding: 4px 8px;}
 .server-actions .edit-btn { background-color: #ffc107; color: #1c1e21; font-size: 1.1em; padding: 4px 8px;}
 .server-actions .delete-btn { background-color: #6c757d; color: white; font-size: 1.1em; padding: 4px 8px;}
+/* Botões principais */
 #add-server-btn { width: 100%; background-color: #1877f2; color: white; padding: 10px; font-size: 1em; }
 #save-server-btn { background-color: #1877f2; color: white; }
 #cancel-edit-btn { background-color: #e4e6eb; color: #4b4f56; }
 #clear-logs-btn { background-color: #e4e6eb; color: #4b4f56; margin-top: 10px;}
 #clone-btn { background-color: #1877f2; color: white; }
+#add-from-json-btn { background-color: #42b72a; color: white; } /* Botão JSON */
+
 
 /* Formulário e Logs */
 .form-group { margin-bottom: 15px; }
 label { display: block; margin-bottom: 5px; font-weight: 600; color: #606770; font-size: 0.95em; }
-input[type="text"], input[type="url"], textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ccd0d5;
-    border-radius: 6px;
-    font-size: 1em;
-    background-color: #f5f6f7;
-}
+input[type="text"], input[type="url"], textarea { width: 100%; padding: 10px 12px; border: 1px solid #ccd0d5; border-radius: 6px; font-size: 1em; background-color: #f5f6f7; }
 input:focus, textarea:focus { outline: none; border-color: #1877f2; background-color: #fff; box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2); }
 textarea { min-height: 100px; resize: vertical; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
 small { display: block; font-size: 0.85em; color: #606770; margin-top: 3px; }
 
-/* Container de Clonagem */
-.git-clone-container { max-width: 900px; margin-left: auto; margin-right: auto; }
+/* Containers Específicos */
+.git-clone-container, .add-json-container { max-width: 900px; margin-left: auto; margin-right: auto; }
+#server-json-config { min-height: 150px; } /* Textarea JSON maior */
 
 /* Logs */
 #log-container h2 { margin-top: 0; }
 #log-server-name { font-weight: normal; font-style: italic; color: #606770;}
-#logs {
-    background-color: #1c1e21; color: #e4e6eb;
-    padding: 15px; border-radius: 6px; height: 450px;
-    overflow-y: scroll; white-space: pre-wrap; word-wrap: break-word;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.9em; margin-bottom: 10px; border: 1px solid #3e4042;
-}
+#logs { background-color: #1c1e21; color: #e4e6eb; padding: 15px; border-radius: 6px; height: 450px; overflow-y: scroll; white-space: pre-wrap; word-wrap: break-word; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9em; margin-bottom: 10px; border: 1px solid #3e4042; }
 .log-stdout { color: #e4e6eb; }
 .log-stderr { color: #ff7f7f; }
 .log-status { color: #ffda63; font-style: italic; }
